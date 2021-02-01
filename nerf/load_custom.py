@@ -37,8 +37,9 @@ def pose_spherical(theta, phi, radius):
     return c2w
 
 
-def load_blender_data(basedir, half_res=False, testskip=1, debug=False):
-    splits = ["train", "val", "test"]
+def load_custom_data(basedir, half_res=False, testskip=1, debug=False):
+    #splits = ["train", "val", "test"]
+    splits = ["train"]
     metas = {}
     for s in splits:
         with open(os.path.join(basedir, f"transforms_{s}.json"), "r") as fp:
@@ -58,7 +59,11 @@ def load_blender_data(basedir, half_res=False, testskip=1, debug=False):
 
         for frame in meta["frames"][::skip]:
             fname = os.path.join(basedir, frame["file_path"] + ".png")
-            imgs.append(imageio.imread(fname))
+            png = imageio.imread(fname)
+            # make square
+            png = png[:, 420:1140, :]
+            # make square
+            imgs.append(png)
             poses.append(np.array(frame["transform_matrix"]))
         imgs = (np.array(imgs) / 255.0).astype(np.float32)
         poses = np.array(poses).astype(np.float32)
@@ -66,7 +71,8 @@ def load_blender_data(basedir, half_res=False, testskip=1, debug=False):
         all_imgs.append(imgs)
         all_poses.append(poses)
 
-    i_split = [np.arange(counts[i], counts[i + 1]) for i in range(3)]
+    #i_split = [np.arange(counts[i], counts[i + 1]) for i in range(3)]
+    i_split = [np.arange(counts[0], counts[1])]
 
     imgs = np.concatenate(all_imgs, 0)
     poses = np.concatenate(all_poses, 0)
@@ -105,7 +111,9 @@ def load_blender_data(basedir, half_res=False, testskip=1, debug=False):
         focal = focal / 2.0
         imgs = [
             torch.from_numpy(
-                cv2.resize(imgs[i], dsize=(400, 400), interpolation=cv2.INTER_AREA)
+                #cv2.resize(imgs[i], dsize=(400, 400), interpolation=cv2.INTER_AREA)
+                cv2.resize(imgs[i], dsize=(360, 360), interpolation=cv2.INTER_AREA)
+
             )
             for i in range(imgs.shape[0])
         ]

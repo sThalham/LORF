@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm, trange
 
 from nerf import (CfgNode, get_embedding_function, get_ray_bundle, img2mse,
-                  load_blender_data, load_llff_data, meshgrid_xy, models,
+                  load_blender_data, load_llff_data, load_custom_data, meshgrid_xy, models,
                   mse2psnr, run_one_iter_of_nerf)
 
 
@@ -87,6 +87,19 @@ def main():
             hwf = [H, W, focal]
             images = torch.from_numpy(images)
             poses = torch.from_numpy(poses)
+        elif cfg.dataset.type.lower() == "custom":
+            images, poses, render_poses, hwf, i_split = load_custom_data(
+                cfg.dataset.basedir,
+                half_res=cfg.dataset.half_res,
+                testskip=cfg.dataset.testskip,
+            )
+            #i_train, i_val, i_test = i_split
+            i_train = i_split
+            H, W, focal = hwf
+            H, W = int(H), int(W)
+            hwf = [H, W, focal]
+            if cfg.nerf.train.white_background:
+                images = images[..., :3] * images[..., -1:] + (1.0 - images[..., -1:])
 
     # Seed experiment for repeatability
     seed = cfg.experiment.randomseed
@@ -207,7 +220,7 @@ def main():
                 encode_direction_fn=encode_direction_fn,
             )
         else:
-            img_idx = np.random.choice(i_train)
+            img_idx = np.random.choice(i_train[0])
             img_target = images[img_idx].to(device)
             pose_target = poses[img_idx, :3, :4].to(device)
             ray_origins, ray_directions = get_ray_bundle(H, W, focal, pose_target)
@@ -284,6 +297,7 @@ def main():
             writer.add_scalar("train/fine_loss", fine_loss.item(), i)
         writer.add_scalar("train/psnr", psnr, i)
 
+        '''
         # Validation
         if (
             i % cfg.experiment.validate_every == 0
@@ -369,6 +383,7 @@ def main():
                     + " Time: "
                     + str(time.time() - start)
                 )
+        '''
 
         if i % cfg.experiment.save_every == 0 or i == cfg.experiment.train_iters - 1:
             checkpoint_dict = {

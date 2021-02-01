@@ -370,4 +370,4 @@ if __name__ == "__main__":
     weights = torch.rand(2, 4)
     weights.requires_grad = True
     samples = sample_pdf(bins, weights, 10)
-    print(samples)
+    #print(samples)
