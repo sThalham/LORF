@@ -14,6 +14,7 @@ from nerf import (
     get_ray_bundle,
     load_blender_data,
     load_llff_data,
+    load_custom_data,
     models,
     get_embedding_function,
     run_one_iter_of_nerf,
@@ -83,6 +84,16 @@ def main():
         H, W, focal = hwf
         hwf = [int(H), int(W), focal]
         render_poses = torch.from_numpy(render_poses)
+    elif cfg.dataset.type.lower() == "custom":
+        # Load blender dataset
+        images, poses, render_poses, hwf, i_split = load_custom_data(
+            cfg.dataset.basedir,
+            half_res=cfg.dataset.half_res,
+            testskip=cfg.dataset.testskip,
+        )
+        i_train = i_split
+        H, W, focal = hwf
+        H, W = int(H), int(W)
 
     # Device on which to run.
     device = "cpu"
