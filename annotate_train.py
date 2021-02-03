@@ -42,8 +42,6 @@ if __name__ == "__main__":
         }
         dict["frames"].append(current_view)
 
-    print
-
     #f = open(annotations_source, 'r')
     #content = f.read()
     #print(content[0])
