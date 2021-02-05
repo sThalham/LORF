@@ -191,7 +191,9 @@ def main():
                 disp = disp_fine if disp_fine is not None else disp_coarse
         times_per_image.append(time.time() - start)
         if configargs.savedir:
+            print(configargs.savedir, i)
             savefile = os.path.join(configargs.savedir, f"{i:04d}.png")
+            #print(savefile)
             imageio.imwrite(
                 savefile, cast_to_image(rgb[..., :3], cfg.dataset.type.lower())
             )
