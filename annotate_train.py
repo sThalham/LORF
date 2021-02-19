@@ -7,10 +7,26 @@ import csv
 import cv2
 
 
+<<<<<<< HEAD
 fx = 914.79047
 fy = 915.3621966666
 cx = 632.46826666666
 cy = 374.607362
+=======
+fxkin = 572.41140
+fykin = 573.57043
+cxkin = 325.26110
+cykin = 242.04899
+
+
+def toPix_array(translation):
+
+    xpix = ((translation[:, 0] * fxkin) / translation[:, 2]) + cxkin
+    ypix = ((translation[:, 1] * fykin) / translation[:, 2]) + cykin
+    #zpix = translation[2] * fxkin
+
+    return np.stack((xpix, ypix), axis=1) #, zpix]
+>>>>>>> 48f8450469adb620f48355fd3c3724aa247155ef
 
 
 def draw_axis(img, poses):
@@ -41,6 +57,16 @@ if __name__ == "__main__":
     empty_source = os.path.join(train_dir, 'empty_groundtruth.txt')
     rgb_path = os.path.join(train_dir, 'rgb')
     #depth_path = os.path.join(train_dir, 'depth')
+
+    tdbox_ori = np.array([[0.25, 0.0, 0.1],  # [35.087, 35.787, 60.686]
+                                [0.25, 0.0, -0.05],
+                                [0.25, -0.25, -0.05],
+                                [0.25, -0.25, 0.1],
+                                [-0.0, 0.0, 0.1],
+                                [-0.0, 0.0, -0.05],
+                                [-0.0, -0.25, -0.05],
+                                [-0.0, -0.25, 0.1]])
+
 
     with open(associations_source, 'r') as f:
         reader = csv.reader(f, delimiter=" ")
@@ -88,9 +114,36 @@ if __name__ == "__main__":
         img = img[int(cy - 320):int(cy + 320), int(cx - 320):int(cx + 320), :]
         img_store = os.path.join(target, images[idx][2])
 
-        # annotations_pose from marker
-        #cam_pose = np.eye((4))
-        #cam_pose[:3, 3] = mar_source[idx][1:4]
+        # annotations_pose
+        cam_pose = np.eye((4))
+        cam_pose[:3, 3] = mar_source[idx][1:4]# * 10.0
+        quat = np.zeros((4))
+        quat[1:] = mar_source[idx][4:-1]
+        quat[0] = mar_source[idx][-1]
+        cam_pose[:3, :3] = tf3d.quaternions.quat2mat(quat)
+
+        tDbox = cam_pose[:3, :3].dot(tdbox_ori.T).T
+        tDbox = tDbox + np.repeat(cam_pose[:3, 3][np.newaxis, :], 8, axis=0)
+        box3D = toPix_array(tDbox)
+        box3D = np.reshape(box3D, (16))
+        #box3D = box3D.tolist()
+        box3D = box3D.astype(np.uint16)
+
+        #marker_pose = cam_pose
+        #cam_pose = np.linalg.inv(cam_pose)
+        #marker_pose = cam_pose
+
+        #traquat = np.zeros((7))
+        #traquat[:3] = marker_pose[:3, 3]
+        #traquat[3:] = tf3d.quaternions.mat2quat(marker_pose[:3, :3])
+
+        # annotations
+        #marker_pose = np.array(ann_source[idx][1:]).reshape(4,4).T
+        #marker_pose = np.linalg.inv(marker_pose)
+        #print(marker_pose)
+
+        #cam_pose = np.linalg.inv(ann_source[idx, 1:].reshape(4,4).T)
+        #cam_pose = ann_source[idx, 1:].reshape(4, 4).T
         #quat = np.zeros((4))
         #quat[1:] = mar_source[idx][4:-1]
         #quat[0] = mar_source[idx][-1]
