@@ -1,6 +1,6 @@
 dataset:
   # Edit this to reflect your datapath.
-  basedir: /home/stefan/data/train_nerf/plate
+  basedir: /home/stefan/data/train_lorf/plate_rendered
   far: 6
   half_res: true
   near: 2

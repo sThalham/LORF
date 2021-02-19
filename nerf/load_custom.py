@@ -60,9 +60,6 @@ def load_custom_data(basedir, half_res=False, testskip=1, debug=False):
         for frame in meta["frames"][::skip]:
             fname = os.path.join(basedir, frame["file_path"] + ".png")
             png = imageio.imread(fname)
-            # make square
-            png = png[:, 420:1140, :]
-            # make square
             imgs.append(png)
             poses.append(np.array(frame["transform_matrix"]))
         imgs = (np.array(imgs) / 255.0).astype(np.float32)
@@ -79,7 +76,9 @@ def load_custom_data(basedir, half_res=False, testskip=1, debug=False):
 
     H, W = imgs[0].shape[:2]
     camera_angle_x = float(meta["camera_angle_x"])
-    focal = 0.5 * W / np.tan(0.5 * camera_angle_x)
+    #focal = 0.5 * W / np.tan(0.5 * camera_angle_x)
+    #print('fx: ', focal)
+    focal = 915.0
 
     render_poses = torch.stack(
         [
@@ -112,7 +111,7 @@ def load_custom_data(basedir, half_res=False, testskip=1, debug=False):
         imgs = [
             torch.from_numpy(
                 #cv2.resize(imgs[i], dsize=(400, 400), interpolation=cv2.INTER_AREA)
-                cv2.resize(imgs[i], dsize=(360, 360), interpolation=cv2.INTER_AREA)
+                cv2.resize(imgs[i], dsize=(320, 320), interpolation=cv2.INTER_AREA)
 
             )
             for i in range(imgs.shape[0])

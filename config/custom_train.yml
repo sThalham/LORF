@@ -20,7 +20,7 @@ dataset:
   # Type of dataset (Blender vs LLFF vs DeepVoxels vs something else)
   type: custom
   # Base directory of dataset.
-  basedir: /home/stefan/data/train_lorf/plate
+  basedir: /home/stefan/data/train_lorf/plate_rendered
   # Optionally, provide a path to the pre-cached dataset dir. This
   # overrides the other dataset options.
   #cachedir: 
@@ -33,9 +33,9 @@ dataset:
   # synthetic (Blender) datasets.
   no_ndc: False
   # Near clip plane (clip all depth values closer than this threshold).
-  near: 2
+  near: 0
   # Far clip plane (clip all depth values farther than this threshold).
-  far: 6
+  far: 1
 
 # Model parameters.
 models:

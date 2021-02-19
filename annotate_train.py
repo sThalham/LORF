@@ -7,6 +7,12 @@ import csv
 import cv2
 
 
+fx = 914.79047
+fy = 915.3621966666
+cx = 632.46826666666
+cy = 374.607362
+
+
 def draw_axis(img, poses):
     # unit is mm
     points = np.float32([[100, 0, 0], [0, 100, 0], [0, 0, 100], [0, 0, 0]]).reshape(-1, 3)
@@ -15,7 +21,7 @@ def draw_axis(img, poses):
     rot, _ = cv2.Rodrigues(rotMat)
     tra = np.expand_dims(poses[0:3], axis=1) * 1000.0
     # [572.4114, 573.57043, 325.26110828, 242.04899594]
-    K = np.float32([572.4114, 0., 325.26110828, 0., 573.57043, 242.04899594, 0., 0., 1.]).reshape(3,3)
+    K = np.float32([fx, 0., cx, 0., fy, cy, 0., 0., 1.]).reshape(3,3)
     axisPoints, _ = cv2.projectPoints(points, rot, tra, K, (0, 0, 0, 0))
 
     img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[0].ravel()), (255,0,0), 3)
@@ -27,10 +33,12 @@ def draw_axis(img, poses):
 if __name__ == "__main__":
 
     train_dir = "/home/stefan/data/train_lorf/plate"
-    annotations_target = os.path.join(train_dir, 'transforms_train.json')
-    annotations_source = os.path.join(train_dir, 'groundtruth_pose.txt')
+    target = "/home/stefan/data/train_lorf/plate_robot_pose"
+    annotations_target = os.path.join(target, 'transforms_train.json') # target for nerf
+    annotations_source = os.path.join(train_dir, 'groundtruth_pose.txt') # cam pose in robot
     associations_source = os.path.join(train_dir, 'associations.txt')
-    markers_source = os.path.join(train_dir, 'groundtruth.txt')
+    markers_source = os.path.join(train_dir, 'groundtruth.txt') # marker pose in cam
+    empty_source = os.path.join(train_dir, 'empty_groundtruth.txt')
     rgb_path = os.path.join(train_dir, 'rgb')
     #depth_path = os.path.join(train_dir, 'depth')
 
@@ -39,62 +47,75 @@ if __name__ == "__main__":
         images = list(reader)
     ann_source = np.genfromtxt(annotations_source, delimiter=' ')
     mar_source = np.genfromtxt(markers_source, delimiter=' ')
+    emp_source = np.genfromtxt(empty_source, delimiter=' ')
+
+    width = 1280
+    height = 720
+    # fx = 923.101
+    # fy = 922.568
+    # cx = 629.3134765625
+    # cy = 376.28814697265625
+    fx = 914.79047
+    fy = 915.3621966666
+    cx = 632.46826666666
+    cy = 374.607362
 
     dict = {"camera_angle_x": 0.7505,
         "frames": []
     }
 
     rgb_imgs = os.listdir(rgb_path)
-    #dep_imgs = os.listdir(depth_path)
 
-    for idx in range(mar_source.shape[0]):
+    cam_init = np.eye((4))
+    cam_init[:3, 3] = mar_source[0][1:4]
+    quat = np.zeros((4))
+    quat[1:] = mar_source[0][4:-1]
+    quat[0] = mar_source[0][-1]
+    cam_init[:3, :3] = tf3d.quaternions.quat2mat(quat)
+
+    rob_init = ann_source[0][1:].reshape((4, 4)).T
+    print(rob_init)
+    #rob_init[:3, 3] = ann_source[0][1:4]
+    #quat = np.zeros((4))
+    #quat[1:] = ann_source[0][4:-1]
+    #quat[0] = ann_source[0][-1]
+    #rob_init[:3, :3] = tf3d.quaternions.quat2mat(quat)
+
+    for idx in range(emp_source.shape[0]):
         img_path = os.path.join(".", images[idx][2][:-4])
-        depth_img = cv2.imread(os.path.join(train_dir, images[idx][2]), -1)
-        depth_img = cv2.resize(depth_img, (640, 480))
-        #print(depth_img.shape)
-        #print(np.nanmax(depth_img))
+        img = cv2.imread(os.path.join(train_dir, images[idx][2]), -1)
+        # png = png[:, 420:1140, :]
+        img = img[int(cy - 320):int(cy + 320), int(cx - 320):int(cx + 320), :]
+        img_store = os.path.join(target, images[idx][2])
 
-        # annotations_pose
-        cam_pose = np.eye((4))
-        cam_pose[:3, 3] = mar_source[idx][1:4]
-        quat = np.zeros((4))
-        quat[1:] = mar_source[idx][4:-1]
-        quat[0] = mar_source[idx][-1]
-        cam_pose[:3, :3] = tf3d.quaternions.quat2mat(quat)
-
-        #marker_pose = cam_pose
-        cam_pose = np.linalg.inv(cam_pose)
-        #marker_pose = cam_pose
-
-        #traquat = np.zeros((7))
-        #traquat[:3] = marker_pose[:3, 3]
-        #traquat[3:] = tf3d.quaternions.mat2quat(marker_pose[:3, :3])
-
-        # annotations
-        #marker_pose = np.array(ann_source[idx][1:]).reshape(4,4).T
-        #marker_pose = np.linalg.inv(marker_pose)
-        #print(marker_pose)
-        #traquat = np.zeros((7))
-        #traquat[:3] = marker_pose[:3, 3]
-        #traquat[3:] = tf3d.quaternions.mat2quat(marker_pose[:3, :3])
-
-        #draw_axis(depth_img, traquat)
-        #cv2.imwrite("/home/stefan/LORF_viz/depth_" + str(idx) + ".png", (depth_img * (255/np.nanmax(depth_img))).astype(np.uint8))
-        #cv2.imwrite("/home/stefan/LORF_viz/depth_" + str(idx) + ".png", depth_img)
-        #cam_pose = np.linalg.inv(ann_source[idx, 1:].reshape(4,4).T)
-        #cam_pose = ann_source[idx, 1:].reshape(4, 4).T
+        # annotations_pose from marker
         #cam_pose = np.eye((4))
-        #print(mar_source[idx], len(mar_source[idx]))
-        #print(mar_source[idx])
         #cam_pose[:3, 3] = mar_source[idx][1:4]
-        #cam_pose[:3, :3] = tf3d.quaternions.quat2mat(mar_source[idx][4:])
-        print('cam_pose: ', cam_pose[:3, 3])
+        #quat = np.zeros((4))
+        #quat[1:] = mar_source[idx][4:-1]
+        #quat[0] = mar_source[idx][-1]
+        #cam_pose[:3, :3] = tf3d.quaternions.quat2mat(quat)
+        #cam_pose = np.linalg.inv(cam_pose)
+        #print(cam_pose)
+
+        rob_pose = ann_source[idx][1:].reshape((4, 4)).T
+        in_robot_diff = np.matmul(np.linalg.inv(rob_pose), rob_init)
+        cam_pose = np.matmul(cam_init, in_robot_diff)
+        cam_pose = np.linalg.inv(cam_pose)
+
+        # visualization
+        traquat = np.zeros((7))
+        traquat[:3] = cam_pose[:3, 3]
+        traquat[3:] = tf3d.quaternions.mat2quat(cam_pose[:3, :3])
+        draw_axis(img, traquat)
+
         cam_pose = cam_pose.tolist()
-        current_view = {"file_path": img_path,
+        current_view = {"file_path": img_store[:-4],
                         "rotation" : 0.0,
                         "transform_matrix" : cam_pose
         }
         dict["frames"].append(current_view)
+        cv2.imwrite(img_store, img)
 
     #f = open(annotations_source, 'r')
     #content = f.read()
