@@ -1,9 +1,9 @@
 dataset:
   # Edit this to reflect your datapath.
-  basedir: /home/stefan/data/train_lorf/plate_rendered
-  far: 6
+  basedir: /home/stefan/data/train_lorf/plate_robot_pose
+  far: 0.8
   half_res: true
-  near: 2
+  near: 0
   no_ndc: true
   testskip: 1
   type: custom
@@ -17,7 +17,7 @@ experiment:
   validate_every: 100
 models:
   coarse:
-    hidden_size: 256
+    hidden_size: 128
     include_input_dir: true
     include_input_xyz: true
     log_sampling_dir: true
@@ -29,7 +29,7 @@ models:
     type: FlexibleNeRFModel
     use_viewdirs: true
   fine:
-    hidden_size: 256
+    hidden_size: 128
     include_input_dir: true
     include_input_xyz: true
     log_sampling_dir: true
@@ -37,7 +37,7 @@ models:
     num_encoding_fn_dir: 4
     num_encoding_fn_xyz: 10
     num_layers: 8
-    skip_connect_every: 4
+    skip_connect_every: 3
     type: FlexibleNeRFModel
     use_viewdirs: true
 nerf:
@@ -51,7 +51,7 @@ nerf:
     num_random_rays: 1024
     perturb: true
     radiance_field_noise_std: 0.2
-    white_background: true
+    white_background: false
   use_viewdirs: true
   validation:
     chunksize: 16384

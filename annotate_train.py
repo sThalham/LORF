@@ -7,16 +7,10 @@ import csv
 import cv2
 
 
-<<<<<<< HEAD
 fx = 914.79047
 fy = 915.3621966666
 cx = 632.46826666666
 cy = 374.607362
-=======
-fxkin = 572.41140
-fykin = 573.57043
-cxkin = 325.26110
-cykin = 242.04899
 
 
 def toPix_array(translation):
@@ -26,7 +20,6 @@ def toPix_array(translation):
     #zpix = translation[2] * fxkin
 
     return np.stack((xpix, ypix), axis=1) #, zpix]
->>>>>>> 48f8450469adb620f48355fd3c3724aa247155ef
 
 
 def draw_axis(img, poses):
@@ -100,7 +93,6 @@ if __name__ == "__main__":
     cam_init[:3, :3] = tf3d.quaternions.quat2mat(quat)
 
     rob_init = ann_source[0][1:].reshape((4, 4)).T
-    print(rob_init)
     #rob_init[:3, 3] = ann_source[0][1:4]
     #quat = np.zeros((4))
     #quat[1:] = ann_source[0][4:-1]
@@ -111,7 +103,7 @@ if __name__ == "__main__":
         img_path = os.path.join(".", images[idx][2][:-4])
         img = cv2.imread(os.path.join(train_dir, images[idx][2]), -1)
         # png = png[:, 420:1140, :]
-        img = img[int(cy - 320):int(cy + 320), int(cx - 320):int(cx + 320), :]
+        #img = img[int(cy - 320):int(cy + 320), int(cx - 320):int(cx + 320), :]
         img_store = os.path.join(target, images[idx][2])
 
         # annotations_pose
@@ -121,13 +113,7 @@ if __name__ == "__main__":
         quat[1:] = mar_source[idx][4:-1]
         quat[0] = mar_source[idx][-1]
         cam_pose[:3, :3] = tf3d.quaternions.quat2mat(quat)
-
-        tDbox = cam_pose[:3, :3].dot(tdbox_ori.T).T
-        tDbox = tDbox + np.repeat(cam_pose[:3, 3][np.newaxis, :], 8, axis=0)
-        box3D = toPix_array(tDbox)
-        box3D = np.reshape(box3D, (16))
-        #box3D = box3D.tolist()
-        box3D = box3D.astype(np.uint16)
+        #cam_pose = np.linalg.inv(cam_pose)
 
         #marker_pose = cam_pose
         #cam_pose = np.linalg.inv(cam_pose)
@@ -152,9 +138,11 @@ if __name__ == "__main__":
         #print(cam_pose)
 
         rob_pose = ann_source[idx][1:].reshape((4, 4)).T
-        in_robot_diff = np.matmul(np.linalg.inv(rob_pose), rob_init)
-        cam_pose = np.matmul(cam_init, in_robot_diff)
+        in_robot_diff = np.matmul(rob_init, np.linalg.inv(rob_pose))
+        cam_pose = np.matmul(np.linalg.inv(cam_init), in_robot_diff)
         cam_pose = np.linalg.inv(cam_pose)
+
+        print('cam_pose: ', cam_pose)
 
         # visualization
         traquat = np.zeros((7))
